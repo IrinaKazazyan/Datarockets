@@ -5,25 +5,37 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AbsListView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavController
+import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.datarockets.R
 import com.example.datarockets.adapters.RecyclerViewAdapter
 import com.example.datarockets.model.BeersList
+import com.example.datarockets.model.BeersListItem
 import com.example.datarockets.viewmodel.MainViewModel
-import kotlinx.android.synthetic.main.fragment_main.*
 
-class MainFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
+class MainFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,
+    RecyclerViewAdapter.OnBeerClickListener {
 
 
-    lateinit var recyclerViewAdapter: RecyclerViewAdapter
-    lateinit var mainViewModel: MainViewModel
-    var page = 0
+    private lateinit var recyclerViewAdapter: RecyclerViewAdapter
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    lateinit var navController: NavController
+    private lateinit var mainViewModel: MainViewModel
+    private var page = 0
+    private var isScrolling: Boolean? = false
+    private var currentItems: Int = 0
+    private var totalItems: Int = 0
+    private var scrollOutItems: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,22 +54,46 @@ class MainFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.d("TAG", "Main Fragment onViewCreated")
-
-        val swipeRefreshLayout = view.findViewById(R.id.pullToRefresh) as SwipeRefreshLayout
+        navController = Navigation.findNavController(view)
+        swipeRefreshLayout = view.findViewById(R.id.pullToRefresh) as SwipeRefreshLayout
         swipeRefreshLayout.setOnRefreshListener(this)
-        initRecyclerView()
+        initRecyclerView(view)
         initViewModel()
     }
 
-    private fun initRecyclerView() {
+    private fun initRecyclerView(view: View) {
         Log.d("TAG", "Main Fragment initRecyclerView")
-        recycler_view.apply {
+        view.findViewById<RecyclerView>(R.id.recycler_view).apply {
             layoutManager = LinearLayoutManager(requireContext())
             val decoration =
                 DividerItemDecoration(requireContext(), DividerItemDecoration.HORIZONTAL)
             addItemDecoration(decoration)
-            recyclerViewAdapter = RecyclerViewAdapter()
+            recyclerViewAdapter = RecyclerViewAdapter(this@MainFragment)
             adapter = recyclerViewAdapter
+
+
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
+                        isScrolling = true
+                    }
+                }
+
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    currentItems = layoutManager!!.childCount
+                    totalItems = layoutManager!!.itemCount
+                    scrollOutItems =
+                        (recyclerView.layoutManager as LinearLayoutManager?)!!.findFirstVisibleItemPosition()
+
+
+                    if (isScrolling!! && currentItems + scrollOutItems == totalItems) {
+                        isScrolling = false
+                        refreshData()
+                    }
+                }
+            })
         }
     }
 
@@ -79,7 +115,13 @@ class MainFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
     override fun onRefresh() {
 //        refreshData
         Log.d("TAG", "main fragment onRefresh")
+        refreshData()
+        swipeRefreshLayout.isRefreshing = false
+    }
+
+    private fun refreshData() {
         page += 1
+        recyclerViewAdapter.beerList.clear()
         mainViewModel.getRefreshBeersList(page, 10)
         mainViewModel.getBeersListObservable().observe(requireActivity(), Observer<BeersList> {
             if (it == null) {
@@ -90,6 +132,14 @@ class MainFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener {
                 recyclerViewAdapter.notifyDataSetChanged()
             }
         })
-        pullToRefresh.isRefreshing = false
+    }
+
+    override fun itemClicked(beersListItem: BeersListItem) {
+        findNavController().navigate(
+            MainFragmentDirections.actionMainFragmentToDetailFragment(
+                beersListItem.id
+            )
+        )
+        Log.d("TAG", " item clicked ${beersListItem.id}")
     }
 }

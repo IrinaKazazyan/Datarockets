@@ -13,4 +13,5 @@ class Repository {
     suspend fun getRefreshBeerList(page: Int, perPage: Int) =
         retrofitInstance.getRefreshBeerList(page, perPage)
 
+    suspend fun getBeerItem(id: Int) = retrofitInstance.getBeerItem(id)
 }

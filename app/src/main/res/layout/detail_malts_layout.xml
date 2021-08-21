@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="10dp"
+    android:layout_marginTop="5dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="5dp">
+
+    <LinearLayout
+        android:background="@color/black"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/detail_malt_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="5"
+            android:padding="5dp"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            tools:text="This is an excellent movie. Do watch it!" />
+
+        <TextView
+            android:id="@+id/detail_malt_amount_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="5"
+            android:padding="5dp"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            tools:text="amount unit" />
+
+        <TextView
+            android:id="@+id/detail_malt_amount_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="5"
+            android:padding="5dp"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            tools:text="amount value" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
