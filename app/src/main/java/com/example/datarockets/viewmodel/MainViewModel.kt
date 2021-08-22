@@ -1,27 +1,18 @@
 package com.example.datarockets.viewmodel
 
-import android.graphics.pdf.PdfDocument
-import android.media.MediaCodecInfo
+import android.content.Context
 import android.util.Log
-import android.widget.Toast
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.datarockets.model.BeersList
+import com.example.datarockets.db.RoomDb
+import com.example.datarockets.model.BeersListItem
 import com.example.datarockets.repository.Repository
 import kotlinx.coroutines.*
 
 class MainViewModel : ViewModel() {
 
-    lateinit var recyclerListData: MutableLiveData<BeersList>
-
-    init {
-        recyclerListData = MutableLiveData()
-
-    }
-
-    fun getBeersListObservable(): MutableLiveData<BeersList> {
-        return recyclerListData
-    }
+    private var recyclerListData: MutableLiveData<ArrayList<BeersListItem>> = MutableLiveData()
 
     private val repository: Repository = Repository()
 
@@ -34,32 +25,32 @@ class MainViewModel : ViewModel() {
         onError("Exception handled: ${throwable.localizedMessage}")
     }
 
-    fun getBeersList() {
-        job = CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
-            val response = repository.getBeersList()
-            withContext(Dispatchers.Main) {
-                if (response.isSuccessful) {
-                    recyclerListData.postValue(response.body())
-                    loading.value = false
-                } else {
-                    onError("Error : ${response.message()} ")
-                }
-            }
-        }
-    }
-
-    fun getRefreshBeersList(page: Int, perPage: Int) {
-        job = CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
-            val response = repository.getRefreshBeerList(page, perPage)
-            withContext(Dispatchers.Main + exceptionHandler) {
-                if (response.isSuccessful) {
+    fun getBeerItemListObservable(
+        context: Context,
+        bFetchFromServer: Boolean,
+        page: Int,
+        perPage: Int
+    ): LiveData<List<BeersListItem>> {
+        if (bFetchFromServer) {
+            job = CoroutineScope(Dispatchers.IO + exceptionHandler).launch {
+                val response = repository.getBeerList(page, perPage)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Thread(Runnable {
+                            Log.d("LOG_TAG", response.body().toString())
+                            RoomDb.getAppDatabase(context)!!.beerDao()!!.deleteAllImageItems()
+                            RoomDb.getAppDatabase(context)!!.beerDao()!!
+                                .insertBeerListItems(response.body()!!)
+                        }).start()
                         recyclerListData.postValue(response.body())
                         loading.value = false
-                } else {
-                    onError("Error : ${response.message()} ")
+                    } else {
+                        onError("Error : ${response.message()} ")
+                    }
                 }
             }
         }
+        return RoomDb.getAppDatabase(context)!!.beerDao()!!.getBeerList()
     }
 
     private fun onError(message: String) {

@@ -1,5 +1,6 @@
 package com.example.datarockets.api
 
+import com.example.datarockets.constants.BASE_URL
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,7 +10,6 @@ class RetrofitInstance {
 
     companion object {
 
-        val BASE_URL = " https://api.punkapi.com/v2/"
 
         fun getRetrofitInstance(): Retrofit {
 

@@ -8,10 +8,9 @@ class Repository {
 
     private val retrofitInstance = RetrofitInstance.getRetrofitInstance().create(Api::class.java)
 
-    suspend fun getBeersList() = retrofitInstance.getBeerList()
-
-    suspend fun getRefreshBeerList(page: Int, perPage: Int) =
-        retrofitInstance.getRefreshBeerList(page, perPage)
+    suspend fun getBeerList(page: Int, perPage: Int) =
+        retrofitInstance.getBeerList(page, perPage)
 
     suspend fun getBeerItem(id: Int) = retrofitInstance.getBeerItem(id)
+
 }

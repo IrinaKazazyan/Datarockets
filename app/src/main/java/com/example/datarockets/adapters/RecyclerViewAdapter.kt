@@ -11,7 +11,8 @@ import com.example.datarockets.model.BeersListItem
 class RecyclerViewAdapter(private val onItemClickListener: OnBeerClickListener) :
     RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder>() {
 
-    var beerList = mutableListOf<BeersListItem>()
+    //    var beerList = mutableListOf<BeersListItem>()
+    var beerList = listOf<BeersListItem>()
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
@@ -44,6 +45,11 @@ class RecyclerViewAdapter(private val onItemClickListener: OnBeerClickListener) 
             tvAbv.text = data.abv.toString()
             tvIbu.text = data.ibu.toString()
         }
+    }
+
+    fun updateList(newItems: List<BeersListItem>) {
+        beerList = newItems
+        notifyDataSetChanged();
     }
 
     interface OnBeerClickListener {
