@@ -9,11 +9,16 @@ import retrofit2.http.Query
 interface Api {
 
     @GET(value = "beers")
-    suspend fun getBeerList(
+    suspend fun getBeerList(): Response<List<BeersListItem>>
+
+    @GET(value = "beers")
+    suspend fun getBeerListByPage(
         @Query("page") page: Int,
-        @Query("per_page") perPage: Int
     ): Response<ArrayList<BeersListItem>>
 
     @GET(value = "beers/{id}")
-    suspend fun getBeerItem(@Path("id") id: Int?): Response<List<BeersListItem>>
+    suspend fun getBeerItemById(@Path("id") id: Int?): Response<List<BeersListItem>>
+
+    @GET(value = "beers/random")
+    suspend fun getRandomBeerItem(): Response<List<BeersListItem>>
 }

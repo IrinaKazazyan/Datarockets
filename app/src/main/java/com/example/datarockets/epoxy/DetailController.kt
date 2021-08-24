@@ -5,6 +5,7 @@ import android.util.Log
 import com.airbnb.epoxy.Carousel
 import com.airbnb.epoxy.TypedEpoxyController
 import com.airbnb.epoxy.carousel
+import com.example.datarockets.constants.LOG_TAG
 import com.example.datarockets.model.BeersListItem
 import okhttp3.internal.wait
 import java.util.*
@@ -12,7 +13,7 @@ import java.util.*
 class DetailController : TypedEpoxyController<BeersListItem>() {
 
     override fun buildModels(data: BeersListItem?) {
-        Log.d("TAG", "data buildModels $data")
+        Log.d(LOG_TAG, "data buildModels $data")
         data?.let { beers ->
             detailHeader {
                 id(beers.id)
@@ -24,7 +25,7 @@ class DetailController : TypedEpoxyController<BeersListItem>() {
 
             detailYeast {
                 id(UUID.randomUUID().toString())
-                yeast(beers.ingredients.yeast)
+                yeast(beers.ingredients?.yeast)
             }
 
             detailYeast {
@@ -32,7 +33,7 @@ class DetailController : TypedEpoxyController<BeersListItem>() {
                 yeast("Malts")
             }
 
-            val maltsModels = beers.ingredients.malt.map { details ->
+            val maltsModels = beers.ingredients?.malt?.map { details ->
                 DetailMaltsModel_()
                     .id(details.amount.value)
                     .maltName(details.name)
@@ -44,7 +45,7 @@ class DetailController : TypedEpoxyController<BeersListItem>() {
                 id("malts")
                 padding(Carousel.Padding.dp(8, 4, 8, 16, 8))
                 hasFixedSize(true)
-                models(maltsModels)
+                models(maltsModels!!)
             }
 
             detailYeast {
@@ -52,7 +53,7 @@ class DetailController : TypedEpoxyController<BeersListItem>() {
                 yeast("Hops")
             }
 
-            val hopsModels = beers.ingredients.hops.map { details ->
+            val hopsModels = beers.ingredients?.hops?.map { details ->
                 DetailHopsModel_()
                     .id(details.amount.value)
                     .hopsName(details.name)
@@ -66,7 +67,7 @@ class DetailController : TypedEpoxyController<BeersListItem>() {
                 id("hops")
                 padding(Carousel.Padding.dp(8, 4, 8, 16, 8))
                 hasFixedSize(true)
-                models(hopsModels)
+                models(hopsModels!!)
             }
         }
     }

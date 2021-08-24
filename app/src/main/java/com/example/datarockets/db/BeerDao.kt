@@ -11,16 +11,18 @@ interface BeerDao {
     @Query("SELECT * From BEER_LIST_TABLE")
     fun getBeerList(): LiveData<List<BeersListItem>>
 
-//    @Update(onConflict = OnConflictStrategy.REPLACE)
-//    fun updateBeerListItems(countryList: List<BeersListItem>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertBeerListItems(beersListItem: List<BeersListItem>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertBeerListItems(countryList: List<BeersListItem>)
+    fun insertRandomBeer(beersListItem: BeersListItem)
 
     @Query("DELETE FROM BEER_LIST_TABLE")
     fun deleteAllImageItems()
 
     @Query("SELECT * FROM BEER_LIST_TABLE WHERE id=:id ")
-    fun getBeerItem(id: Int): LiveData<BeersListItem>
+    fun getBeerItemById(id: Int): List<BeersListItem>
 
+    @Update
+    fun update(beersListItem: BeersListItem?)
 }

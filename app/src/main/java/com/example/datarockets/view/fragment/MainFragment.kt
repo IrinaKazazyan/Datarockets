@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AbsListView
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.datarockets.R
 import com.example.datarockets.adapters.RecyclerViewAdapter
+import com.example.datarockets.constants.LOG_TAG
 import com.example.datarockets.model.BeersListItem
 import com.example.datarockets.utils.AppUtil.isNetworkConnected
 import com.example.datarockets.viewmodel.MainViewModel
@@ -29,7 +31,9 @@ class MainFragment : Fragment(),
 
     private lateinit var recyclerViewAdapter: RecyclerViewAdapter
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
-    lateinit var navController: NavController
+    private lateinit var progressBar: ProgressBar
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var navController: NavController
     private lateinit var mainViewModel: MainViewModel
     private var page = 0
     private var isScrolling: Boolean? = false
@@ -39,7 +43,9 @@ class MainFragment : Fragment(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        recyclerViewAdapter = RecyclerViewAdapter(this@MainFragment)
+        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        observeBeerItemList()
     }
 
     override fun onCreateView(
@@ -53,54 +59,19 @@ class MainFragment : Fragment(),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Log.d("TAG", "Main Fragment onViewCreated")
+        Log.d(LOG_TAG, "Main Fragment onViewCreated")
         navController = Navigation.findNavController(view)
-        mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
         swipeRefreshLayout = view.findViewById(R.id.pullToRefresh) as SwipeRefreshLayout
         swipeRefreshLayout.setOnRefreshListener(onSwipeRefreshListener)
         initRecyclerView(view)
-        observeBeerItemList()
-    }
-
-    private fun initRecyclerView(view: View) {
-        Log.d("TAG", "Main Fragment initRecyclerView")
-        view.findViewById<RecyclerView>(R.id.recycler_view).apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            val decoration =
-                DividerItemDecoration(requireContext(), DividerItemDecoration.HORIZONTAL)
-            addItemDecoration(decoration)
-            recyclerViewAdapter = RecyclerViewAdapter(this@MainFragment)
-            adapter = recyclerViewAdapter
-
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
-                        isScrolling = true
-                    }
-                }
-
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-                    currentItems = layoutManager!!.childCount
-                    totalItems = layoutManager!!.itemCount
-                    scrollOutItems =
-                        (recyclerView.layoutManager as LinearLayoutManager?)!!.findFirstVisibleItemPosition()
-
-                    if (isScrolling!! && currentItems + scrollOutItems == totalItems) {
-                        isScrolling = false
-                        observeBeerItemList()
-                    }
-                }
-            })
-        }
     }
 
     private var onSwipeRefreshListener =
         SwipeRefreshLayout.OnRefreshListener {
-            Log.d("LOG_TAG", "onRefresh")
+            Log.d(LOG_TAG, "onRefresh")
             if (isNetworkConnected(requireContext())) {
-                observeBeerItemList()
+                refreshData()
             } else {
                 Toast.makeText(
                     requireContext(),
@@ -109,20 +80,112 @@ class MainFragment : Fragment(),
                 ).show()
                 swipeRefreshLayout.isRefreshing = false
             }
+
+
+            swipeRefreshLayout.setColorSchemeColors(
+                resources.getColor(android.R.color.holo_blue_bright),
+                resources.getColor(android.R.color.holo_orange_dark),
+                resources.getColor(android.R.color.holo_green_dark),
+                resources.getColor(android.R.color.holo_red_dark)
+            )
+
         }
+
+    private fun initRecyclerView(view: View) {
+        Log.d(LOG_TAG, "Main Fragment initRecyclerView")
+        recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view).apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            val decoration =
+                DividerItemDecoration(requireContext(), DividerItemDecoration.HORIZONTAL)
+            addItemDecoration(decoration)
+            adapter = recyclerViewAdapter
+
+            pullDownToRefresh()
+        }
+    }
+
+    private fun RecyclerView.pullDownToRefresh() {
+        addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL) {
+                    isScrolling = true
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                currentItems = layoutManager!!.childCount
+                totalItems = layoutManager!!.itemCount
+                scrollOutItems =
+                    (recyclerView.layoutManager as LinearLayoutManager?)!!.findFirstVisibleItemPosition()
+
+                if (isScrolling!! && currentItems + scrollOutItems == totalItems) {
+                    isScrolling = false
+
+                    if (isNetworkConnected(requireContext())) {
+                        observeBeerItemListByPage()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "Oops!! Check your network connection!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        })
+    }
 
     private fun observeBeerItemList() {
         val bConnected = isNetworkConnected(requireContext())
+        mainViewModel.getBeersList(requireContext(), bConnected)
+        mainViewModel.getBeerItemListObservable(requireContext())
+            .observe(
+                requireActivity(),
+                Observer<List<BeersListItem>>(function = { beerItemList ->
+                    if (beerItemList != null) {
+                        recyclerViewAdapter.updateList(beerItemList)
+                    }
+                })
+            )
+    }
+
+    private fun observeBeerItemListByPage() {
+        observeProgressBar()
         page += 1
-        mainViewModel.getBeerItemListObservable(requireContext(), bConnected, page, 10)
-            .observe(requireActivity(), Observer<List<BeersListItem>>(function = { imageItemList ->
-                if (imageItemList != null) {
-                    recyclerViewAdapter.beerList = imageItemList
-                    recyclerViewAdapter.notifyDataSetChanged()
+        mainViewModel.getBeerItemListByPageObservable(requireContext(), page)
+            .observe(requireActivity(), Observer<List<BeersListItem>>(function = { beerItemList ->
+                if (beerItemList != null) {
+                    recyclerViewAdapter.updateList(beerItemList)
                 }
                 swipeRefreshLayout.isRefreshing = false
             }))
     }
+
+    private fun refreshData() {
+        mainViewModel.getBeerItemListObservable(requireContext())
+            .observe(requireActivity(), Observer<List<BeersListItem>>(function = { beer ->
+                if (beer != null) {
+                    recyclerViewAdapter.updateList(beer.shuffled())
+                }
+                swipeRefreshLayout.isRefreshing = false
+            }))
+    }
+
+    private fun observeProgressBar() {
+        mainViewModel.progressbarObservable!!.observe(
+            requireActivity(),
+            Observer<Boolean>(function = { progressObserve ->
+                if (progressObserve) {
+                    progressBar.visibility = View.VISIBLE
+                } else {
+                    progressBar.visibility = View.GONE
+                }
+            })
+        )
+    }
+
 
     override fun itemClicked(beersListItem: BeersListItem) {
         findNavController().navigate(
@@ -130,6 +193,6 @@ class MainFragment : Fragment(),
                 beersListItem.id
             )
         )
-        Log.d("TAG", " item clicked ${beersListItem.id}")
+        Log.d(LOG_TAG, " item clicked ${beersListItem.id}")
     }
 }

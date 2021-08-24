@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.datarockets.constants.DATABASE_NAME
 import com.example.datarockets.constants.DATABASE_VERSION
 import com.example.datarockets.db.typeConverters.IngredientsConverter
 import com.example.datarockets.model.BeersListItem
@@ -22,7 +23,7 @@ abstract class RoomDb : RoomDatabase() {
 
         val migration_1_2: Migration = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE userinfo ADD COLUMN phone TEXT DEFAULT ''")
+//                database.execSQL("ALTER TABLE userinfo ADD COLUMN phone TEXT DEFAULT ''")
             }
         }
 
@@ -30,7 +31,7 @@ abstract class RoomDb : RoomDatabase() {
             if (INSTANCE == null) {
 
                 INSTANCE = Room.databaseBuilder<RoomDb>(
-                    context.applicationContext, RoomDb::class.java, "AppDBB"
+                    context.applicationContext, RoomDb::class.java, DATABASE_NAME
                 )
                     .addMigrations(migration_1_2)
                     .allowMainThreadQueries()

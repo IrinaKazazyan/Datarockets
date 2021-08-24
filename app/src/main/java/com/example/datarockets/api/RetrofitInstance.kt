@@ -10,7 +10,6 @@ class RetrofitInstance {
 
     companion object {
 
-
         fun getRetrofitInstance(): Retrofit {
 
             val logging = HttpLoggingInterceptor()

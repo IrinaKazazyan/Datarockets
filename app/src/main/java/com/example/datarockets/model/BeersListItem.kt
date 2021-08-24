@@ -1,6 +1,7 @@
 package com.example.datarockets.model
 
 import androidx.annotation.NonNull
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
@@ -11,16 +12,29 @@ import java.io.Serializable
 @Entity(tableName = BEER_TABLE_NAME)
 data class BeersListItem(
     @PrimaryKey
+    @ColumnInfo(name = "id")
     val id: Int,
-    val abv: Double,
-    val description: String,
-    val ibu: Double,
-    val image_url: String,
 
+    @ColumnInfo(name = "abv")
+    val abv: Double?,
+
+    @ColumnInfo(name = "description")
+    val description: String?,
+
+    @ColumnInfo(name = "ibu")
+    val ibu: Double?,
+
+    @ColumnInfo(name = "image_url")
+    val image_url: String?,
+
+    @ColumnInfo(name = "ingredients")
     @TypeConverters(IngredientsConverter::class)
     @NonNull
-    val ingredients: Ingredients,
+    val ingredients: Ingredients?,
 
-    val name: String,
-    val tagline: String,
+    @ColumnInfo(name = "name")
+    val name: String?,
+
+    @ColumnInfo(name = "tagline")
+    val tagline: String?,
 ) : Serializable
